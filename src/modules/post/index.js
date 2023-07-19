@@ -1,14 +1,14 @@
-// products/index.js
+// posts/index.js
 
 const express = require("express");
-const productsController = require("./controllers/products.controller");
-const productsRoutes = require("./routes/products.routes");
+const postController = require("./controllers/post.controller");
+const postsRoutes = require("./routes/post.routes");
 
 const router = express.Router();
 
-router.use("/", productsRoutes);
+router.use("/", postsRoutes);
 
 module.exports = {
-  controller: productsController,
+  controller: postController,
   router: router,
 };
