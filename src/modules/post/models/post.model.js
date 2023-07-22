@@ -1,5 +1,12 @@
 const mongoose = require("mongoose");
 
+const commentSchema = new mongoose.Schema({
+  user: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
+  post: { type: mongoose.Schema.Types.ObjectId, ref: 'Post', required: true },
+  commentBody: { type: String, required: true },
+  createdAt: { type: Date, default: Date.now },
+});
+
 // Define the schema
 const postSchema = new mongoose.Schema({
   postBody: {
@@ -8,11 +15,13 @@ const postSchema = new mongoose.Schema({
   },
   postImage: {
     type: String,
-    required: true,
+  },
+  batch: {
+    type: Number,
   },
   category: {
     type: String,
-    enum: ["assignment", "github", "quiz", "support session", "other"],
+    enum: ["assignment", "github", "quiz", "support-session", "other","module"],
     default: "other",
   },
   tags: {
@@ -20,7 +29,7 @@ const postSchema = new mongoose.Schema({
   },
   status: { 
         type: String,
-        enum: ["new", "investigate", "resolved", "unresolved", "rejected"],
+        enum: ["new","inprogress", "investigate", "resolved", "unresolved", "rejected"],
         default: "new", 
   },
   priority:  {
@@ -31,14 +40,11 @@ const postSchema = new mongoose.Schema({
     type: [mongoose.Schema.Types.ObjectId],
   },
   comments: {
-    type: [String],
+    type: [commentSchema],
   },
   timestamp: {
     type: Date,
     default: Date.now,
-  },
-  batch: {
-    type: Number,
   },
   isComment: {
     type: Boolean,
@@ -48,14 +54,9 @@ const postSchema = new mongoose.Schema({
     type: Boolean,
     default: false,
   },
-  authorId: {
-    type: String,
-  },
-  authorName: {
-    type: String,
-  },
-  authorImage: {
-    type: String,
+  author: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref:"User",
   },
   adminReplied: {
     type: Boolean,

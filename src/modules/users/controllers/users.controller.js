@@ -27,21 +27,21 @@ exports.loginUser = async (req, res) => {
   try {
     const user = await User.findByEmail(req.body?.email);
     if (!user) {
-      return res.status(404).send({ success:false,message: "User not found" });
+      return res.send({ success:false,message: "User not found" });
     }
 
     // Validate the password
     if (req.body.password !== user.password) {
-      return res.status(401).send({success:false, message: "Invalid password" });
+      return res.send({success:false, message: "Invalid password" });
     }
 
     // Generate JWT
     const payload = { email: user.email, id: user._id };
     const token = jwtUtils.generateToken(payload, secretKey, "1h");
-    res.status(201).send({ success:true, token });
+    res.send({ success:true, token });
   } catch (err) {
     console.log(err);
-    res.status(500).send({ success:false,message: "Internal server error" });
+    res.send({ success:false,message: "Internal server error" });
   }
 };
 

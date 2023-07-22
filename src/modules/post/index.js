@@ -1,4 +1,3 @@
-// posts/index.js
 
 const express = require("express");
 const postController = require("./controllers/post.controller");
