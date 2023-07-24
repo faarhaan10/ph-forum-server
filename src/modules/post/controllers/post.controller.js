@@ -68,6 +68,15 @@ exports.getPosts = async (req, res) => {
         },
       });
     }
+    //by tags
+    if (req.query.tags) {
+      const isAr = Array.isArray(req.query.tags)
+      aggregationPipeline.push({
+        $match: {
+          tags: { $in: isAr?req.query.tags:[req.query.tags] }
+        },
+      });
+    }
 
     if (req.query.fromDate && req.query.toDate) {
       aggregationPipeline.push({
@@ -193,14 +202,14 @@ exports.createPost = async (req, res) => {
 
 exports.updatePost = async (req, res) => {
   try {
-    const Post = await Post.findByIdAndUpdate(req.params.id, req.body, {
+    const post = await Post.findByIdAndUpdate(req.params.id, req.body, {
       new: true,
       runValidators: true,
     });
-    if (!Post) {
+    if (!post) {
       return res.status(404).send({ message: "Post not found" });
     }
-    res.status(200).send(Post);
+    res.status(200).send({success: true, message:'Updated post'});
   } catch (err) {
     console.log(err);
     res.status(500).send({ message: "Internal server error" });
@@ -209,13 +218,42 @@ exports.updatePost = async (req, res) => {
 
 exports.deletePost = async (req, res) => {
   try {
-    const Post = await Post.findByIdAndDelete(req.params.id);
-    if (!Post) {
+    const post = await Post.findByIdAndDelete(req.params.id);
+    if (!post) {
       return res.status(404).send({ message: "Post not found" });
     }
-    res.status(204).send();
+    res.status(204).send({succes: true});
   } catch (err) {
     console.log(err);
     res.status(500).send({ message: "Internal server error" });
+  }
+};
+
+
+exports.likePost = async (req, res) => {
+  try {
+    const postId = req.params.id;
+    const userId = req.body.userId; 
+    console.log(postId, userId);
+
+    // Check post
+    const post = await Post.findById(postId);
+    if (!post) {
+      return res.status(404).json({ message: 'Post not found' });
+    }
+
+    const userLiked = post.upvotes.includes(userId);
+
+    if (userLiked) { 
+      post.upvotes.pull(userId);
+    } else { 
+      post.upvotes.push(userId);
+    }
+
+    await post.save();
+
+    res.send({success:true, message: 'Liked successfully' });
+  } catch (error) {
+    res.status(500).send({ error: 'Failed to update like' });
   }
 };

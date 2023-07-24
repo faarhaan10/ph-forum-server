@@ -37,7 +37,7 @@ const postSchema = new mongoose.Schema({
         enum: ["high", "medium", "low"],
   },
   upvotes: {
-    type: [mongoose.Schema.Types.ObjectId],
+    type: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }]
   },
   comments: {
     type: [commentSchema],

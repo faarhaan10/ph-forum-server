@@ -5,6 +5,7 @@ const router = express.Router();
 
 router.get("/", postController.getPosts);
 router.get("/:id", postController.getPostById);
+router.put("/like/:id", postController.likePost);
 router.get("/batch/:batchNumber", postController.getPostByBatch);
 router.post("/", postController.createPost);
 router.put("/:id", postController.updatePost);
