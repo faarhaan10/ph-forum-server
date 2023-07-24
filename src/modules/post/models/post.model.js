@@ -1,11 +1,6 @@
 const mongoose = require("mongoose");
 
-const commentSchema = new mongoose.Schema({
-  user: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
-  post: { type: mongoose.Schema.Types.ObjectId, ref: 'Post', required: true },
-  commentBody: { type: String, required: true },
-  createdAt: { type: Date, default: Date.now },
-});
+
 
 // Define the schema
 const postSchema = new mongoose.Schema({
@@ -29,7 +24,7 @@ const postSchema = new mongoose.Schema({
   },
   status: { 
         type: String,
-        enum: ["new","inprogress", "investigate", "resolved", "unresolved", "rejected"],
+        enum: ["new","inprogress", "investigate", "resolved", "unresolved", "rejected","testing"],
         default: "new", 
   },
   priority:  {
@@ -37,10 +32,10 @@ const postSchema = new mongoose.Schema({
         enum: ["high", "medium", "low"],
   },
   upvotes: {
-    type: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }]
+    type: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
   },
   comments: {
-    type: [commentSchema],
+    type: [{type:String}],
   },
   timestamp: {
     type: Date,

@@ -9,16 +9,16 @@ exports.createUser = async (req, res) => {
   try {
     const exists = await User.findOne({ email: req.body?.email });
     if (exists) {
-      return res.status(404).send({success:false, message: "User already exists." });
+      return res.send({success:false, message: "User already exists." });
     }
 
     const user = await User.create(req.body);
     const payload = { email: user.email, id: user._id };
     const token = jwtUtils.generateToken(payload, secretKey, "5h");
-    res.status(200).send({ success:true, token });
+    res.send({ success:true, token });
   } catch (err) {
     console.log(err);
-    res.status(500).send({ success:false,message: "Internal server error" });
+    res.send({ success:false,message: "Internal server error" });
   }
 };
 
@@ -50,7 +50,7 @@ exports.getUser = async (req, res) => {
   try {
     const authHeader = req.headers.authorization;
     const token = authHeader && authHeader.split(" ")[1];
-     
+    
     if (!token) {
       return res.status(401).send({ error: "Authorization token not found" });
     }

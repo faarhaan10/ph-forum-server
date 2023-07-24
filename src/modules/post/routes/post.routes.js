@@ -4,11 +4,14 @@ const postController = require("../controllers/post.controller");
 const router = express.Router();
 
 router.get("/", postController.getPosts);
-router.get("/:id", postController.getPostById);
-router.put("/like/:id", postController.likePost);
-router.get("/batch/:batchNumber", postController.getPostByBatch);
+router.get("/trending", postController.getTrendingPost);
+router.get("/progress", postController.getProgress);
+router.get("/single/:id", postController.getPostById);
+router.post("/like/:id", postController.likePost);
+router.delete("/:id", postController.deletePost);
 router.post("/", postController.createPost);
 router.put("/:id", postController.updatePost);
-router.delete("/:id", postController.deletePost);
+
+
 
 module.exports = router;

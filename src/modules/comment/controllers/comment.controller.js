@@ -5,27 +5,33 @@ const Post = require("../../post/models/post.model");
 exports.addComment = async (req, res) => {
   try {
     const doc = req.body;
+    console.log(8,doc);
     const comment = await Comment.create(doc);
     await Post.findByIdAndUpdate(doc.post, {
       $push: { comments: comment._id },
     });
-    res.status(200).send({success: true,comment});
+    
+    res.send({ success: true, comment });
   } catch (err) {
     res
       .status(500)
-      .send({success: false, message: "Error fetching comments", error: err.message });
+      .send({
+        success: false,
+        message: "Error fetching comments",
+        error: err.message,
+      });
   }
 };
 
 // all comments for an array of comment ids
 exports.getCommentsByIds = async (req, res) => {
   try {
-    const commentIds = req.body.commentIds; 
+    const commentIds = req.body.commentIds;
     const comments = await Comment.find({ _id: { $in: commentIds } }).populate(
       "user",
       "name image"
     );
-    res.status(200).send(comments);
+    res.send(comments);
   } catch (err) {
     res
       .status(500)
@@ -39,13 +45,18 @@ exports.deleteCommentById = async (req, res) => {
     const commentId = req.params.commentId;
     const deletedComment = await Comment.findByIdAndDelete(commentId);
     if (!deletedComment) {
-      return res.status(404).send({success:false, message: "Comment not found" });
+      return res
+        .status(404)
+        .send({ success: false, message: "Comment not found" });
     }
-   
-    await Post.findByIdAndUpdate(deletedComment.post, { $pull: { comments: commentId } });
 
-      
-    res.status(200).send({success:true, message: "Comment deleted successfully" });
+    await Post.findByIdAndUpdate(deletedComment.post, {
+      $pull: { comments: commentId },
+    });
+
+    res
+      .status(200)
+      .send({ success: true, message: "Comment deleted successfully" });
   } catch (err) {
     res
       .status(500)

@@ -2,14 +2,11 @@ const User = require("../../users/models/user.model");
 const Post = require("../models/post.model");
 const mongoose = require("mongoose");
 
-
-
 exports.getPosts = async (req, res) => {
   try {
     const aggregationPipeline = [];
 
-    console.log(10, req.query);
-    
+
     //by batch
     if (req.query.batch) {
       aggregationPipeline.push({
@@ -32,7 +29,7 @@ exports.getPosts = async (req, res) => {
     if (req.query.author) {
       aggregationPipeline.push({
         $match: {
-          author:new mongoose.Types.ObjectId(req.query.author)
+          author: new mongoose.Types.ObjectId(req.query.author),
         },
       });
     }
@@ -45,7 +42,7 @@ exports.getPosts = async (req, res) => {
       });
     }
     //by admin
-    if (req.query.adminReplied == "false" &&req.query.adminPost == "false" ) {
+    if (req.query.adminReplied == "false" && req.query.adminPost == "false") {
       aggregationPipeline.push({
         $match: {
           adminReplied: false,
@@ -70,10 +67,10 @@ exports.getPosts = async (req, res) => {
     }
     //by tags
     if (req.query.tags) {
-      const isAr = Array.isArray(req.query.tags)
+      const isAr = Array.isArray(req.query.tags);
       aggregationPipeline.push({
         $match: {
-          tags: { $in: isAr?req.query.tags:[req.query.tags] }
+          tags: { $in: isAr ? req.query.tags : [req.query.tags] },
         },
       });
     }
@@ -100,17 +97,17 @@ exports.getPosts = async (req, res) => {
     // Add the $lookup stage to join the User collection
     aggregationPipeline.push({
       $lookup: {
-        from: 'users', // The name of the User collection
-        localField: 'author',
-        foreignField: '_id',
-        as: 'authorInfo',
+        from: "users",
+        localField: "author",
+        foreignField: "_id",
+        as: "authorInfo",
       },
     });
 
     // Unwind the authorInfo array to get a single object for each post
     aggregationPipeline.push({
       $unwind: {
-        path: '$authorInfo',
+        path: "$authorInfo",
         preserveNullAndEmptyArrays: true, // Preserve posts without an author
       },
     });
@@ -131,20 +128,20 @@ exports.getPosts = async (req, res) => {
         isComment: 1,
         adminPost: 1,
         adminReplied: 1,
-        author: '$authorInfo.name',
-        authorImage: '$authorInfo.image',
-        authorId: '$authorInfo._id',
-        authorBatch: '$authorInfo.batch',
-        upvoteCount: { $size: '$upvotes' },
-        commentsCount: { $size: '$comments' },
+        author: "$authorInfo.name",
+        authorImage: "$authorInfo.image",
+        authorId: "$authorInfo._id",
+        authorBatch: "$authorInfo.batch",
+        upvoteCount: { $size: "$upvotes" },
+        commentsCount: { $size: "$comments" },
       },
     });
 
     // Sort the posts
     aggregationPipeline.push({
       $sort: {
-        batch: -1,
         timestamp: -1,
+        batch: -1,
         priority: -1,
         upvoteCount: -1,
         commentsCount: -1,
@@ -156,11 +153,9 @@ exports.getPosts = async (req, res) => {
     res.send(posts);
   } catch (err) {
     console.log(err);
-    res.status(500).send({ message: 'Internal server error' });
+    res.status(500).send({ message: "Internal server error" });
   }
 };
-
-
 
 exports.getPostById = async (req, res) => {
   try {
@@ -174,19 +169,123 @@ exports.getPostById = async (req, res) => {
     res.status(500).send({ message: "Internal server error" });
   }
 };
-exports.getPostByBatch = async (req, res) => {
+exports.getTrendingPost = async (req, res) => {
   try {
-    const post = await Post.find({
-      batch: req.params.batchNumber,
-      ...req.query,
-    }).populate("author", "name image batch");
-    if (!post) {
+    const posts = await Post.aggregate([
+      {
+        $match: {
+          priority: "high", // consider'high' priority
+        },
+      },
+      {
+        $lookup: {
+          from: "users",
+          localField: "author",
+          foreignField: "_id",
+          as: "authorInfo",
+        },
+      },
+      {
+        $unwind: {
+          path: "$authorInfo",
+          preserveNullAndEmptyArrays: true,
+        },
+      },
+      {
+        $project: {
+          postBody: 1,
+          postImage: 1,
+          batch: 1,
+          author: "$authorInfo.name",
+          authorId: "$authorInfo._id",
+          // priority: 1,
+          // upvoteCount: { $size: "$upvotes" },
+          // commentsCount: { $size: "$comments" },
+          // tagsCount: { $size: "$tags" },
+        },
+      },
+      {
+        $sort: {
+          priority: -1,
+          commentsCount: -1,
+          upvoteCount: -1,
+          tagsCount: -1,
+        },
+      },
+      { $limit: 5 },
+    ]);
+
+    if (!posts) {
       return res.status(404).send({ message: "Post not found" });
     }
-    res.status(200).send(post);
+    res.status(200).send(posts);
   } catch (err) {
     console.log(err);
     res.status(500).send({ message: "Internal server error" });
+  }
+};
+
+exports.getProgress = async (req, res) => {
+  const userId = req.query.userId;
+  let query = {};
+  if (userId !== ""  && userId !=='undefined') {
+    query = { author: userId };
+  }
+  console.log(235, query);
+  if (query.author) {
+    console.log(236, query);
+  }
+  else {
+    console.log(237,false,query);
+  }
+  
+  try {
+    const userPosts = await Post.find(query);
+    
+    const totalPosts = userPosts.length;
+     
+    const inProgressCount = userPosts.filter(
+      (post) => post.status === "inprogress"
+    ).length;
+    const resolvedCount = userPosts.filter(
+      (post) => post.status === "resolved"
+    ).length;
+    const unresolvedCount = userPosts.filter(
+      (post) => post.status === "unresolved"
+    ).length;
+    const investigateCount = userPosts.filter(
+      (post) => post.status === "investigate"
+    ).length;
+    const testingCount = userPosts.filter(
+      (post) => post.status === "testing"
+    ).length;
+    const rejectCount = userPosts.filter(
+      (post) => post.status === "rejected"
+    ).length;
+
+
+    if (query.author) { 
+      res.send({
+        unresolvedCount,
+        resolvedCount,
+        totalPosts,
+        rejectCount,
+        user:true
+      });
+    } else {
+      res.send({
+
+        unresolvedCount,
+        investigateCount,
+        inProgressCount,
+        testingCount,
+      });
+    }
+  } catch (error) {
+    console.error("Error fetching user progress:", error);
+    res
+      .status(500)
+      .json({ error: "An error occurred while fetching user progress" });
   }
 };
 
@@ -209,7 +308,7 @@ exports.updatePost = async (req, res) => {
     if (!post) {
       return res.status(404).send({ message: "Post not found" });
     }
-    res.status(200).send({success: true, message:'Updated post'});
+    res.status(200).send({ success: true, message: "Updated post" });
   } catch (err) {
     console.log(err);
     res.status(500).send({ message: "Internal server error" });
@@ -222,38 +321,35 @@ exports.deletePost = async (req, res) => {
     if (!post) {
       return res.status(404).send({ message: "Post not found" });
     }
-    res.status(204).send({succes: true});
+    res.send({ success: true });
   } catch (err) {
     console.log(err);
     res.status(500).send({ message: "Internal server error" });
   }
 };
 
-
 exports.likePost = async (req, res) => {
   try {
     const postId = req.params.id;
     const userId = req.body.userId; 
-    console.log(postId, userId);
 
     // Check post
     const post = await Post.findById(postId);
     if (!post) {
-      return res.status(404).json({ message: 'Post not found' });
+      return res.send({ message: "Post not found" });
     }
-
     const userLiked = post.upvotes.includes(userId);
 
-    if (userLiked) { 
-      post.upvotes.pull(userId);
-    } else { 
-      post.upvotes.push(userId);
+    if (userLiked) {
+      return res.send({ message: "You already liked" });
     }
+    await Post.findByIdAndUpdate(postId, { $push: { upvotes: userId } });
 
-    await post.save();
+    // await post.save();
 
-    res.send({success:true, message: 'Liked successfully' });
+    res.send({ success: true, message: "Liked successfully" });
   } catch (error) {
-    res.status(500).send({ error: 'Failed to update like' });
+    console.log(354,error);
+    res.send({ error: "Failed to update like" });
   }
 };
